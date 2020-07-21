@@ -1,4 +1,7 @@
-﻿using System;
+﻿using APKSMerger.AndroidRes;
+using APKSMerger.AndroidRes.Model;
+using APKSMerger.AndroidRes.Model.Generic;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
@@ -20,27 +23,27 @@ namespace APKSMerger
             tStyle.Items.Add(new AndroidGeneric() { Name = "itemBackground", Value = "bla" });
 
             AndroidPlural tPlural = new AndroidPlural() { Name = "plural" };
-            tPlural.Values.AddRange(new AndroidPluralItem[]{
-                new AndroidPluralItem() {Quantity = "few", Value = "bla"},
-                new AndroidPluralItem() { Quantity = "many", Value = "blub"}
+            tPlural.Values.AddRange(new AndroidPlural.Item[]{
+                new AndroidPlural.Item() {Quantity = "few", Value = "bla"},
+                new AndroidPlural.Item() { Quantity = "many", Value = "blub"}
              });
 
             AndroidStringArray tsArray = new AndroidStringArray() { Name = "strarr" };
-            tsArray.Values.AddRange(new AndroidArrayItem[] {
-                new AndroidArrayItem(){ Value = "one"},
-                new AndroidArrayItem(){ Value = "two"}
+            tsArray.Values.AddRange(new AndroidGenericArray.Item[] {
+                new AndroidGenericArray.Item(){ Value = "one"},
+                new AndroidGenericArray.Item(){ Value = "two"}
             });
 
             AndroidIntegerArray tiArray = new AndroidIntegerArray() { Name = "intarr" };
-            tiArray.Values.AddRange(new AndroidArrayItem[] {
-                new AndroidArrayItem(){ Value = "1"},
-                new AndroidArrayItem(){ Value = "2"}
+            tiArray.Values.AddRange(new AndroidGenericArray.Item[] {
+                new AndroidGenericArray.Item(){ Value = "1"},
+                new AndroidGenericArray.Item(){ Value = "2"}
             });
 
             AndroidGenericArray tgArray = new AndroidGenericArray() { Name = "arr" };
-            tgArray.Values.AddRange(new AndroidArrayItem[] {
-                new AndroidArrayItem(){ Value = "@drawable/abc_test"},
-                new AndroidArrayItem(){ Value = "@color/app_background"}
+            tgArray.Values.AddRange(new AndroidGenericArray.Item[] {
+                new AndroidGenericArray.Item(){ Value = "@drawable/abc_test"},
+                new AndroidGenericArray.Item(){ Value = "@color/app_background"}
             });
 
             AndroidStyleable tStyleable = new AndroidStyleable() { Name = "dec-style" };
@@ -88,138 +91,4 @@ namespace APKSMerger
             }
         }
     }
-
-    [XmlRoot("resources")]
-    public class AndroidResources
-    {
-        //basic
-        [XmlElement("bool", Type = typeof(AndroidBool))]
-        [XmlElement("integer", Type = typeof(AndroidInteger))]
-        [XmlElement("dimen", Type = typeof(AndroidDimension))]
-        [XmlElement("drawable", Type = typeof(AndroidDrawable))]
-        [XmlElement("color", Type = typeof(AndroidColor))]
-        [XmlElement("fraction", Type = typeof(AndroidFraction))]
-
-        //extended
-        [XmlElement("attr", Type = typeof(AndroidAttribute))]
-        [XmlElement("string", Type = typeof(AndroidString))]
-        [XmlElement("item", Type = typeof(AndroidTypedItem))]
-
-        //complex
-        [XmlElement("style", Type = typeof(AndroidStyle))]
-        [XmlElement("plurals", Type = typeof(AndroidPlural))]
-        [XmlElement("string-array", Type = typeof(AndroidStringArray))]
-        [XmlElement("integer-array", Type = typeof(AndroidIntegerArray))]
-        [XmlElement("array", Type = typeof(AndroidGenericArray))]
-        [XmlElement("declare-styleable", Type = typeof(AndroidStyleable))]
-        public List<AndroidResource> Values { get; set; } = new List<AndroidResource>();
-    }
-
-    public class AndroidResource
-    {
-        [XmlAttribute(AttributeName = "name")]
-        public string Name { get; set; }
-    }
-
-    public class AndroidGeneric : AndroidResource
-    {
-        [XmlText]
-        public string Value { get; set; }
-    }
-
-    public class AndroidGenericArray : AndroidResource
-    {
-        [XmlElement("item", Type = typeof(AndroidArrayItem))]
-        public List<AndroidArrayItem> Values { get; set; } = new List<AndroidArrayItem>();
-    }
-
-    public sealed class AndroidBool : AndroidResource
-    {
-        [XmlText]
-        public bool Value { get; set; }
-    }
-
-    public sealed class AndroidInteger : AndroidResource
-    {
-        [XmlText]
-        public int Value { get; set; }
-    }
-
-    public sealed class AndroidString : AndroidResource
-    {
-        [XmlAttribute("formatted")]
-        public bool Formatted { get; set; }
-
-        [XmlAttribute("translatable")]
-        public bool Translateable { get; set; }
-
-        [XmlText]
-        public string Value { get; set; }
-    }
-
-    public sealed class AndroidAttribute : AndroidResource
-    {
-        [XmlAttribute("format")]
-        public string Format { get; set; }
-
-        [XmlText]
-        public string Value { get; set; }
-    }
-
-    public sealed class AndroidTypedItem : AndroidResource
-    {
-        [XmlAttribute("type")]
-        public string Type { get; set; }
-
-        [XmlText]
-        public string Value { get; set; }
-    }
-
-    public sealed class AndroidStyle : AndroidResource
-    {
-        [XmlAttribute("parent")]
-        public string Parent { get; set; }
-
-        [XmlElement("item", Type = typeof(AndroidGeneric))]
-        public List<AndroidGeneric> Items { get; set; } = new List<AndroidGeneric>();
-    }
-
-    public sealed class AndroidPluralItem
-    {
-        [XmlAttribute("quantitiy")]
-        public string Quantity { get; set; }
-
-        [XmlText]
-        public string Value { get; set; }
-    }
-
-    public sealed class AndroidPlural : AndroidResource
-    {
-        [XmlElement("item", Type = typeof(AndroidPluralItem))]
-        public List<AndroidPluralItem> Values { get; set; } = new List<AndroidPluralItem>();
-    }
-
-    public sealed class AndroidArrayItem
-    {
-        [XmlText]
-        public string Value { get; set; }
-    }
-
-    public sealed class AndroidStyleable : AndroidResource
-    {
-        [XmlElement("attr", Type = typeof(AndroidAttribute))]
-        public List<AndroidAttribute> Values { get; set; } = new List<AndroidAttribute>();
-    }
-
-    public sealed class AndroidDimension : AndroidGeneric { }
-
-    public sealed class AndroidDrawable : AndroidGeneric { }
-
-    public sealed class AndroidColor : AndroidGeneric { }
-
-    public sealed class AndroidFraction : AndroidGeneric { }
-
-    public sealed class AndroidStringArray : AndroidGenericArray { }
-
-    public sealed class AndroidIntegerArray : AndroidGenericArray { }
 }

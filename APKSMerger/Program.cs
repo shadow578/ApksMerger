@@ -1,6 +1,7 @@
 ﻿using APKSMerger.AndroidRes;
 using APKSMerger.AndroidRes.Model;
 using APKSMerger.AndroidRes.Model.Generic;
+using APKSMerger.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,7 +14,32 @@ namespace APKSMerger
     {
         static void Main(string[] args)
         {
-            TestDeserialize();
+            //DirectoryInfo tBase = new DirectoryInfo(@"C:\Users\Nienhaus\Desktop\dev\de-apks\xml-merge-test\test\base");
+            //DirectoryInfo tSp1 = new DirectoryInfo(@"C:\Users\Nienhaus\Desktop\dev\de-apks\xml-merge-test\test\split_a");
+            //DirectoryInfo tSp2 = new DirectoryInfo(@"C:\Users\Nienhaus\Desktop\dev\de-apks\xml-merge-test\test\split_b");
+            //
+            //Log.LogDebug = true;
+            //Log.LogVerbose = true;
+            //Log.LogVeryVerbose = true;
+
+            //new AndroidResourceMerger().MergeSplits(tBase, tSp1, tSp2);
+
+            //return;
+            DirectoryInfo dirBase = new DirectoryInfo(@"C:\Users\Nienhaus\Desktop\dev\de-apks\apks_merge_test0\base");
+            DirectoryInfo libArm64 = new DirectoryInfo(@"C:\Users\Nienhaus\Desktop\dev\de-apks\apks_merge_test0\split_config.arm64_v8a");
+            DirectoryInfo libArm32 = new DirectoryInfo(@"C:\Users\Nienhaus\Desktop\dev\de-apks\apks_merge_test0\split_config.armeabi_v7a");
+            DirectoryInfo langEn = new DirectoryInfo(@"C:\Users\Nienhaus\Desktop\dev\de-apks\apks_merge_test0\split_config.en");
+            DirectoryInfo langZh = new DirectoryInfo(@"C:\Users\Nienhaus\Desktop\dev\de-apks\apks_merge_test0\split_config.zh");
+            DirectoryInfo resHdpi = new DirectoryInfo(@"C:\Users\Nienhaus\Desktop\dev\de-apks\apks_merge_test0\split_config.hdpi");
+            DirectoryInfo resXXXHdpi = new DirectoryInfo(@"C:\Users\Nienhaus\Desktop\dev\de-apks\apks_merge_test0\split_config.xxxhdpi");
+
+            Log.LogDebug = true;
+            Log.LogVerbose = true;
+            Log.LogVeryVerbose = true;
+
+            new AndroidResourceMerger().MergeSplits(dirBase, libArm64, libArm32, langEn, langZh, resHdpi, resXXXHdpi);
+
+            //TestDeserialize();
         }
 
         static void TestSerialize()
@@ -23,9 +49,9 @@ namespace APKSMerger
             tStyle.Items.Add(new AndroidGeneric() { Name = "itemBackground", Value = "bla" });
 
             AndroidPlural tPlural = new AndroidPlural() { Name = "plural" };
-            tPlural.Values.AddRange(new AndroidPlural.Item[]{
-                new AndroidPlural.Item() {Quantity = "few", Value = "bla"},
-                new AndroidPlural.Item() { Quantity = "many", Value = "blub"}
+            tPlural.Values.AddRange(new AndroidPlural.Plural[]{
+                new AndroidPlural.Plural() {Quantity = "few", Value = "bla"},
+                new AndroidPlural.Plural() { Quantity = "many", Value = "blub"}
              });
 
             AndroidStringArray tsArray = new AndroidStringArray() { Name = "strarr" };

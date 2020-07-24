@@ -6,7 +6,7 @@ namespace APKSMerger.AndroidRes.Model
 {
     public sealed class AndroidPlural : AndroidResource
     {
-        public sealed class Item
+        public sealed class Plural
         {
             [XmlAttribute("quantitiy")]
             public string Quantity { get; set; }
@@ -15,7 +15,7 @@ namespace APKSMerger.AndroidRes.Model
             public string Value { get; set; }
         }
 
-        [XmlElement("item", Type = typeof(Item))]
-        public List<Item> Values { get; set; } = new List<Item>();
+        [XmlElement("item", Type = typeof(Plural))]
+        public List<Plural> Values { get; set; } = new List<Plural>();
     }
 }

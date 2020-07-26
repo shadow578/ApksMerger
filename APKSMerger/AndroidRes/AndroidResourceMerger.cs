@@ -11,8 +11,97 @@ namespace APKSMerger.AndroidRes
     /// <summary>
     /// merges android resource files
     /// </summary>
-    public sealed class AndroidResourceMerger
+    public sealed class AndroidMerger
     {
+        /// <summary>
+        /// check capabilities of the base and splits, warn if (common) libs are missing
+        /// </summary>
+        /// <param name="locales">list of supported locales; key is locale, value is name of dir that first included it</param>
+        /// <param name="abis">list of supported abis; key is abi, value is name of dir that first included it</param>
+        /// <param name="baseDir">base project dir</param>
+        /// <param name="splits">split dirs</param>
+        public void CollectCapabilities(out Dictionary<string, string> locales, out Dictionary<string, string> abis,
+        DirectoryInfo baseDir, params DirectoryInfo[] splits)
+        {
+            //init dicts
+            Log.i("collecting info about splits...");
+            locales = new Dictionary<string, string>();
+            abis = new Dictionary<string, string>();
+
+            //combine base and splits into one list
+            List<DirectoryInfo> allDir = new List<DirectoryInfo>();
+            allDir.Add(baseDir);
+            allDir.AddRange(splits);
+
+            //check all dirs, collect infos about them
+            foreach (DirectoryInfo d in allDir)
+            {
+                //check exists
+                if (!d.Exists)
+                {
+                    Log.w($"cannot access directory: {d.FullName}");
+                    continue;
+                }
+
+                //get all library archs included in this dir
+                //a decompiled apk dir may have a lib directory that contains native libraries for all archs supported by that apk (or split)
+                //the archs are splitted into their own directories, depending on the arch they're for
+                string libsDir = Path.Combine(d.FullName, "libs");
+                if (Directory.Exists(libsDir))
+                {
+                    foreach (string arch in Directory.EnumerateDirectories(libsDir))
+                    {
+                        //add arch to lists of abis
+                        if (!abis.ContainsKey(arch))
+                        {
+                            Log.v($"{d.Name} includes abi {arch}");
+                            abis.Add(arch, d.Name);
+                        }
+                        else
+                        {
+                            //double arch?
+                            Log.w($"arch {arch} already included by {abis[arch]} - in {d.Name}");
+                        }
+                    }
+                }
+                else
+                {
+                    Log.v($"{d.Name} does not include abis");
+                }
+
+                //get all locales included in this dir
+                //extra locales are defined in strings.xml files in directories named values-<LOCALE_NAME>
+                //locale name seems to be formatted as ISO 639, but with an extra r (so en-GB == en-rGB)
+                string resDir = Path.Combine(d.FullName, "res");
+                if (Directory.Exists(resDir))
+                {
+                    //add all dirs matching pattern (like values-en-rGB)
+                    foreach (string lang in Directory.EnumerateDirectories(resDir, @"values-*-*"))
+                    {
+                        //check directory contains a strings.xml
+                        if (!File.Exists(Path.Combine(lang, "strings.xml")))
+                            continue;
+
+                        //add lang to list of locales
+                        if (!locales.ContainsKey(lang))
+                        {
+                            Log.v($"{d.Name} included locale {lang}");
+                            locales.Add(lang, d.Name);
+                        }
+                        else
+                        {
+                            //double lang?
+                            Log.w($"locale {lang} already included by {locales[lang]} - in {d.Name}");
+                        }
+                    }
+                }
+                else
+                {
+                    Log.v($"{d.Name} does not include locales");
+                }
+            }
+        }
+
         /// <summary>
         /// merge all splits into the base project dir
         /// </summary>
@@ -138,6 +227,61 @@ namespace APKSMerger.AndroidRes
                     File.Delete(tempPath);
                 }
             });
+
+            //remove splits from android manifest
+            FileInfo baseManifest = new FileInfo(Path.Combine(baseDir.FullName, "AndroidManifest.xml"));
+            PatchManifest(baseManifest);
+        }
+
+        /// <summary>
+        /// Patch the AndroidManifest.xml to not use splits
+        /// </summary>
+        /// <param name="manifest">the manifest xml to patch</param>
+        void PatchManifest(FileInfo manifest)
+        {
+            Log.d($"patching manifest {manifest.FullName}...");
+
+            //check the file exists
+            if (manifest.Exists)
+            {
+                Log.e("manifest to patch does not exist!");
+                return;
+            }
+
+            //prepare targets to remove
+            string[] removeTargets = { @"android:isSplitRequired=""true""",
+                @"<meta-data android:name=""com.android.vending.splits.required"" android:value=""true""/>",
+                @"<meta-data android:name=""com.android.vending.splits"" android:resource=""@xml/splits0""/>"};
+
+            //create temp file
+            FileInfo temp = new FileInfo(Path.GetTempFileName());
+
+            //copy from input to temp, replace everything on replace list
+            using (StreamReader inp = manifest.OpenText())
+            using (StreamWriter oup = temp.CreateText())
+            {
+                string ln;
+                while ((ln = inp.ReadLine()) != null)
+                {
+                    //remove all
+                    foreach (string target in removeTargets)
+                    {
+                        ln = ln.Replace(target, "");
+                    }
+
+                    //write back
+                    oup.WriteLine(ln);
+                }
+            }
+
+            //move temp to input and delete temp if still exists
+            string tempPath = temp.FullName;
+            temp.MoveTo(manifest.FullName, true);
+
+            if (File.Exists(tempPath))
+            {
+                File.Delete(tempPath);
+            }
         }
 
         /// <summary>

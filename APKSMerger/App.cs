@@ -11,12 +11,6 @@ namespace APKSMerger
 
         public static void Main(string[] args)
         {
-            //Log.LogDebug = true;
-            //Log.LogVerbose = true;
-            //Log.LogVeryVerbose = true;
-
-            new InteractiveUI().UiRoot();
-
 #if DEBUG
             if (args.Length <= 0)
             {
@@ -52,7 +46,7 @@ namespace APKSMerger
         /// </summary>
         static void EnterInteractive()
         {
-
+            new InteractiveUI().UiRoot();
         }
 
         /// <summary>

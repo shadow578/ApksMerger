@@ -96,5 +96,20 @@ namespace APKSMerger.Util
                 return BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
             }
         }
+
+        /// <summary>
+        /// repeat the char n times
+        /// </summary>
+        /// <param name="c">char to repeat</param>
+        /// <param name="n">how often to repeat</param>
+        /// <returns>string with n time c</returns>
+        public static string Repeat(this char c, int n)
+        {
+            string s = "";
+            for (int i = 0; i < n; i++)
+                s += c;
+
+            return s;
+        }
     }
 }

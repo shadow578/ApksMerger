@@ -72,7 +72,7 @@ namespace APKSMerger.Util
         /// <param name="s">the string to log</param>
         public static void w(string s)
         {
-            WriteLogDirect($"[W]{s}");
+            WriteLogDirect($"[W]{s}", ConsoleColor.DarkYellow);
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace APKSMerger.Util
         /// <param name="s">the string to log</param>
         public static void e(string s)
         {
-            WriteLogDirect($"[E]{s}");
+            WriteLogDirect($"[E]{s}", ConsoleColor.Red);
         }
         #endregion
 
@@ -98,9 +98,24 @@ namespace APKSMerger.Util
         /// writes a direct log message
         /// </summary>
         /// <param name="s">the string to log</param>
-        static void WriteLogDirect(string s)
+        /// <param name="color">color to log in, null is default</param>
+        static void WriteLogDirect(string s, ConsoleColor? color = null)
         {
+            //set color
+            ConsoleColor iColor = Console.ForegroundColor;
+            if (color.HasValue)
+            {
+                Console.ForegroundColor = color.Value;
+            }
+
+            //write log
             Console.WriteLine(s);
+
+            //restore color
+            if (color.HasValue)
+            {
+                Console.ForegroundColor = iColor;
+            }
         }
 
         /// <summary>

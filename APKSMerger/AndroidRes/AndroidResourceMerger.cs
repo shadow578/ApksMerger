@@ -46,21 +46,24 @@ namespace APKSMerger.AndroidRes
                 //get all library archs included in this dir
                 //a decompiled apk dir may have a lib directory that contains native libraries for all archs supported by that apk (or split)
                 //the archs are splitted into their own directories, depending on the arch they're for
-                string libsDir = Path.Combine(d.FullName, "libs");
+                string libsDir = Path.Combine(d.FullName, "lib");
                 if (Directory.Exists(libsDir))
                 {
                     foreach (string arch in Directory.EnumerateDirectories(libsDir))
                     {
+                        //get name of arch
+                        string archName = Path.GetFileName(arch);
+
                         //add arch to lists of abis
-                        if (!abis.ContainsKey(arch))
+                        if (!abis.ContainsKey(archName))
                         {
-                            Log.v($"{d.Name} includes abi {arch}");
-                            abis.Add(arch, d.Name);
+                            Log.v($"{d.Name} includes abi {archName}");
+                            abis.Add(archName, d.Name);
                         }
                         else
                         {
                             //double arch?
-                            Log.w($"arch {arch} already included by {abis[arch]} - in {d.Name}");
+                            Log.w($"arch {archName} already included by {abis[archName]} - in {d.Name}");
                         }
                     }
                 }
@@ -76,22 +79,25 @@ namespace APKSMerger.AndroidRes
                 if (Directory.Exists(resDir))
                 {
                     //add all dirs matching pattern (like values-en-rGB)
-                    foreach (string lang in Directory.EnumerateDirectories(resDir, @"values-*-*"))
+                    foreach (string lang in Directory.EnumerateDirectories(resDir, @"values-*"))
                     {
                         //check directory contains a strings.xml
                         if (!File.Exists(Path.Combine(lang, "strings.xml")))
                             continue;
 
+                        //get name of lang
+                        string langName = Path.GetFileName(lang).ReplaceFirst("values-", "");
+
                         //add lang to list of locales
-                        if (!locales.ContainsKey(lang))
+                        if (!locales.ContainsKey(langName))
                         {
-                            Log.v($"{d.Name} included locale {lang}");
-                            locales.Add(lang, d.Name);
+                            Log.v($"{d.Name} included locale {langName}");
+                            locales.Add(langName, d.Name);
                         }
                         else
                         {
                             //double lang?
-                            Log.w($"locale {lang} already included by {locales[lang]} - in {d.Name}");
+                            Log.w($"locale {langName} already included by {locales[langName]} - in {d.Name}");
                         }
                     }
                 }
@@ -242,7 +248,7 @@ namespace APKSMerger.AndroidRes
             Log.d($"patching manifest {manifest.FullName}...");
 
             //check the file exists
-            if (manifest.Exists)
+            if (!manifest.Exists)
             {
                 Log.e("manifest to patch does not exist!");
                 return;

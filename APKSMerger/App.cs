@@ -11,9 +11,9 @@ namespace APKSMerger
 
         public static void Main(string[] args)
         {
-            Log.LogDebug = true;
-            Log.LogVerbose = true;
-            Log.LogVeryVerbose = true;
+            //Log.LogDebug = true;
+            //Log.LogVerbose = true;
+            //Log.LogVeryVerbose = true;
 
             new InteractiveUI().UiRoot();
 

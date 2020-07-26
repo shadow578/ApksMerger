@@ -54,7 +54,7 @@ namespace APKSMerger
         static bool Run(string exe, string args)
         {
             //log what we're starting
-            Log.d($"Calling {exe} args {args}");
+            Log.v($"Calling {exe} args {args}");
 
             //prepare process with output redirect
             ProcessStartInfo pi = new ProcessStartInfo(exe, args)
@@ -92,7 +92,7 @@ namespace APKSMerger
         /// </summary>
         static void LogExternalOutput(object sender, DataReceivedEventArgs e)
         {
-            Log.v($"[EXT]; {e.Data}");
+            Log.d($"[OUT]: {e.Data}");
         }
 
         /// <summary>

@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace APKSMerger
@@ -29,7 +28,7 @@ namespace APKSMerger
             //nothing to see here ;)
             string title = (random.Next(0, 100) < 10) ? "Choose your fighter" : "Choose operation";
             BranchMenu(title,
-                new string[] { "merge .apks", "merge .apkm", "merge decompiled directories", "change log level" },
+                new string[] { "merge .apks to .apk", "merge .apkm to .apk", "merge decompiled directories to .apk", "set global log level" },
                 new Action[] { () => DecompileApks(), DecodeApkm, ChooseProjectDirs, SetLogLevel });
         }
 
@@ -76,10 +75,13 @@ namespace APKSMerger
 
             //decode apkm, use same but change extension
             string apks = Path.Combine(Path.GetDirectoryName(apkm), Path.GetFileNameWithoutExtension(apkm) + ".apks");
-            if (!LibWrapper.UnAPKM.Decode(apkm, apks))
+            using (new WaitSpinner())
             {
-                Console.WriteLine("decode failed!");
-                return;
+                if (!LibWrapper.UnAPKM.Decode(apkm, apks))
+                {
+                    Console.WriteLine("decode failed!");
+                    return;
+                }
             }
 
             //continue
@@ -158,6 +160,9 @@ namespace APKSMerger
                     //remove from splitDirs
                     splitDirs.Remove(baseDir);
                 }
+
+                //remove extracted files
+                Directory.Delete(apksExtractDir, true);
             }
 
             //continue to merge
@@ -235,6 +240,9 @@ namespace APKSMerger
                     Console.WriteLine($"{split} was not found!");
                     return;
                 }
+
+                //add to list
+                splitDirs.Add(splitI);
             }
 
             //get capabilities
@@ -246,35 +254,60 @@ namespace APKSMerger
 
             //print capabilities
             Console.Clear();
-            Console.WriteLine("~~ Capabilities of the merged APK ~~");
+            Console.WriteLine("~~ Details ~~");
+            Console.WriteLine($"Base:");
+            Console.WriteLine($" {_baseDir}");
+            Console.WriteLine("Splits:");
+            foreach (string split in _splitDirs)
+            {
+                Console.WriteLine($" {split}");
+            }
+
+            Console.WriteLine("\n\n~~ Capabilities ~~");
             Console.WriteLine("supported locales:");
             foreach (string locale in locales.Keys)
             {
                 Console.WriteLine($"- {locale} (in {locales[locale]})");
             }
-            Console.WriteLine("supported abis:");
+
+            Console.WriteLine("\nsupported abis:");
             foreach (string abi in abis.Keys)
             {
                 Console.WriteLine($"- {abi} (in {abis[abi]})");
             }
 
             //check common abis
+            Console.WriteLine("\n\n");
             if (!abis.ContainsKey(@"arm64-v8a"))
-                Console.WriteLine("Warning: merged apk will not support arm64 (= current devices)");
+                WriteLineColored("Warning: merged apk will not support arm64 (= current devices)", ConsoleColor.Red);
             if (!abis.ContainsKey(@"armeabi-v7a"))
-                Console.WriteLine("Warning: merged apk will not support arm (= legacy devices)");
+                WriteLineColored("Warning: merged apk will not support arm (= legacy devices)", ConsoleColor.DarkYellow);
             if (!abis.ContainsKey(@"x86"))
-                Console.WriteLine("Warning: merged apk will not support x86 (= legacy devices / emulators)");
+                WriteLineColored("Warning: merged apk will not support x86 (= legacy devices / emulators)", ConsoleColor.DarkYellow);
+            //dont warn for x86_64, noone uses that anyways
 
             //ask for merge
             if (ShowMenu("Do you want to merge to one apk?", "yes, merge", "no, exit") != 0) return;
 
             //do merge
             Console.Clear();
+            Console.WriteLine("merging apks...");
             using (new WaitSpinner())
             {
                 merger.MergeSplits(baseDir, splitDirs.ToArray());
-                Console.WriteLine("merge finished!\n");
+            }
+            Console.WriteLine("\n\nmerge finished!\n<ENTER> to continue");
+            Console.ReadLine();
+            Console.Clear();
+
+            //remove split dirs
+            if (ShowMenu("Clean up split directories?", "yes", "no") == 0)
+            {
+                foreach (DirectoryInfo dir in splitDirs)
+                {
+                    Console.WriteLine($"remove {dir.Name}...");
+                    dir.Delete(true);
+                }
             }
 
             //continue
@@ -288,6 +321,7 @@ namespace APKSMerger
         void ExitOrRecompile(string baseDir)
         {
             //ask for recompile
+            Console.Clear();
             if (ShowMenu("Do you want to recompile the apk?", "yes, recompile", "no, exit") != 0) return;
 
             //recompile
@@ -323,7 +357,7 @@ namespace APKSMerger
             do
             {
                 //read string from user
-                Console.Write(title);
+                Console.Write($"{title}: ");
                 path = Console.ReadLine();
 
                 //check if path is empty
@@ -450,6 +484,24 @@ namespace APKSMerger
         {
             return string.IsNullOrWhiteSpace(Path.GetExtension(path));
         }
+
+        /// <summary>
+        /// writes a colored message to console
+        /// </summary>
+        /// <param name="s">the string to log</param>
+        /// <param name="color">color to log in</param>
+        static void WriteLineColored(string s, ConsoleColor color)
+        {
+            //set color
+            ConsoleColor iColor = Console.ForegroundColor;
+            Console.ForegroundColor = color;
+
+            //write log
+            Console.WriteLine(s);
+
+            //restore color
+            Console.ForegroundColor = iColor;
+        }
     }
 
     /// <summary>
@@ -498,15 +550,25 @@ namespace APKSMerger
             while (!requestStop)
             {
                 //get original cursor pos
-                int iTop = Console.CursorTop,
-                    iLeft = Console.CursorLeft;
+                //int iTop = Console.CursorTop,
+                //    iLeft = Console.CursorLeft;
 
                 //move to target pos and write
-                Console.SetCursorPosition(left, top);
-                Console.Write(stages[currentStage]);
+                //Console.SetCursorPosition(left, top);
+                //Console.Write(stages[currentStage]);
 
                 //reset cursor pos
-                Console.SetCursorPosition(iLeft, iTop);
+                //Console.SetCursorPosition(iLeft, iTop);
+
+                //get cursor left
+                int iLeft = Console.CursorLeft;
+
+                //write cursor at left = 0 
+                Console.CursorLeft = 0;
+                Console.Write(stages[currentStage]);
+
+                //restore cursor left
+                Console.CursorLeft = iLeft;
 
                 //update current stage
                 currentStage++;

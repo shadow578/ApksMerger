@@ -28,8 +28,8 @@ namespace APKSMerger
             //nothing to see here ;)
             string title = (random.Next(0, 100) < 10) ? "Choose your fighter" : "Choose operation";
             BranchMenu(title,
-                new string[] { "merge .apks to .apk", "merge .apkm to .apk", "merge decompiled directories to .apk", "set global log level" },
-                new Action[] { () => DecompileApks(), DecodeApkm, ChooseProjectDirs, SetLogLevel });
+                new string[] { "merge .apks to .apk", "merge .apkm to .apk", "merge extracted .apks to .apk", "merge decompiled directories to .apk", "set global log level" },
+                new Action[] { () => DecompileApks(), DecodeApkm, () => ChooseExtractedDir(), ChooseProjectDirs, SetLogLevel });
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace APKSMerger
         }
 
         /// <summary>
-        /// extract and decompile a apks file, continue to showCapabilities()
+        /// extract a apks file, continue to ChooseExtractedDir()
         /// </summary>
         /// <param name="apks">apks file to decompile</param>
         void DecompileApks(string apks = "")
@@ -100,24 +100,46 @@ namespace APKSMerger
                 apks = GetPath("enter path to .apks file", true);
             }
 
+            //prepare extraction directory
+            string extractDir = Path.Combine(Path.GetDirectoryName(apks), "merge", "extracted");
+
+            using (new WaitSpinner())
+            {
+                //extract apks file to directory
+                Directory.CreateDirectory(extractDir);
+                ZipFile.ExtractToDirectory(apks, extractDir, true);
+            }
+
+            //continue to merge
+            ChooseExtractedDir(extractDir);
+
+            //delete extracted files
+            Directory.Delete(extractDir, true);
+        }
+
+        /// <summary>
+        /// decompile extracted apk files, continue to ShowCapabilities()
+        /// </summary>
+        /// <param name="extractedDir">directory apks file of previous step was extracted to</param>
+        void ChooseExtractedDir(string extractedDir = "")
+        {
+            //get path to extracted directory
+            if (string.IsNullOrWhiteSpace(extractedDir))
+            {
+                extractedDir = GetPath("enter path to directory where apk files are located", true, true);
+            }
+
             string baseDir = null;
             List<string> splitDirs = new List<string>();
             using (new WaitSpinner())
             {
-                //prepare project directory in same dir as apks file
-                string projectDirRoot = Path.Combine(Path.GetDirectoryName(apks), "merge");
-                string apksExtractDir = Path.Combine(projectDirRoot, "extracted");
-
-                //create dirs
-                Directory.CreateDirectory(apksExtractDir);
-
-                //extract apks file
-                ZipFile.ExtractToDirectory(apks, apksExtractDir, true);
+                //prepare project directory in same dir as apk files
+                string projectDirRoot = Path.Combine(extractedDir, "merge");
 
                 //decompile all apk files in extraction directory, try to find base apk
                 //base apk is the one that is not called split_config.*
                 bool autoFindBase = true;
-                foreach (string apk in Directory.EnumerateFiles(apksExtractDir, "*.apk"))
+                foreach (string apk in Directory.EnumerateFiles(extractedDir, "*.apk"))
                 {
                     //prepare output directory in project root
                     string decompileDir = Path.Combine(projectDirRoot, Path.GetFileNameWithoutExtension(apk));
@@ -160,9 +182,6 @@ namespace APKSMerger
                     //remove from splitDirs
                     splitDirs.Remove(baseDir);
                 }
-
-                //remove extracted files
-                Directory.Delete(apksExtractDir, true);
             }
 
             //continue to merge
@@ -453,24 +472,24 @@ namespace APKSMerger
                 switch (keyPress.Key)
                 {
                     case ConsoleKey.DownArrow:
-                    {
-                        currentSelection++;
-                        if (currentSelection >= options.Length)
-                            currentSelection = 0;
-                        break;
-                    }
+                        {
+                            currentSelection++;
+                            if (currentSelection >= options.Length)
+                                currentSelection = 0;
+                            break;
+                        }
                     case ConsoleKey.UpArrow:
-                    {
-                        currentSelection--;
-                        if (currentSelection < 0)
-                            currentSelection = options.Length - 1;
-                        break;
-                    }
+                        {
+                            currentSelection--;
+                            if (currentSelection < 0)
+                                currentSelection = options.Length - 1;
+                            break;
+                        }
                     case ConsoleKey.Enter:
-                    {
-                        Console.Clear();
-                        return currentSelection;
-                    }
+                        {
+                            Console.Clear();
+                            return currentSelection;
+                        }
                 }
             } while (true);
         }

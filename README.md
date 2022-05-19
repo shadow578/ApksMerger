@@ -1,3 +1,6 @@
+Due to changes in the structure of split apks, this project will no longer function correctly. 
+
+
 # APKS Merger
 
 //TODO: add cooler description
